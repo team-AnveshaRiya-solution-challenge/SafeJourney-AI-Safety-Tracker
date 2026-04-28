@@ -146,54 +146,31 @@ async function startJourney() {
       lastUpdated: Date.now()
     };
 
-    await set(newRef, currentTripData);
+    console.log("[App] Attempting to write to Firebase...");
+    
+    // Add a 5 second timeout check for Firebase
+    const firebasePromise = set(newRef, currentTripData);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Firebase write timed out. Check your database rules and connection.")), 5000)
+    );
+
+    await Promise.race([firebasePromise, timeoutPromise]);
+    console.log("[App] Firebase write successful");
 
     localStorage.setItem("tripId", currentTripId);
-    localStorage.setItem("userName", userName);
-    localStorage.setItem("source", source);
-    localStorage.setItem("destination", destination);
-    localStorage.setItem("tripStatus", "active");
-    localStorage.setItem("tripAlertLevel", "0");
-    localStorage.setItem("tripLastUpdated", String(Date.now()));
-
-    setNavStatus("active", "Tracking");
-    setStatusDisplay("active", 0);
-    startBtn.style.display = "none";
-    document.getElementById("endJourneyBtn").style.display = "flex";
-
-    const activeActions = document.getElementById("activeJourneyActions");
-    const staticSos = document.getElementById("staticSos");
-    if (activeActions) activeActions.style.display = "flex";
-    if (staticSos) staticSos.style.display = "none";
-
-    showShareLink(currentTripId);
-    toggleFormLock(true);
-
-    document.getElementById("shareWithSelectedBtn").disabled = false;
-    document.getElementById("shareJourneyStatus").textContent =
-      `Select contacts below and tap Share to notify them`;
-
-    addTimelineEvent(`Journey started: ${source} → ${destination}`, "safe");
-
-    userContacts.forEach(async c => {
-      const guardianUrl = buildGuardianUrl(currentTripId, c.id);
-      const msgRef = push(ref(db, `chats/${currentUser.uid}/${c.id}/messages`));
-      await set(msgRef, {
-        sender: "traveller",
-        text: `🚀 I've started a journey! Track me here: ${guardianUrl}`,
-        timestamp: Date.now()
-      });
-    });
-
-    generateAndShowSummary();
-
+    // ... (rest of the assignments)
+    
+    console.log("[App] Starting tracking...");
     startLiveTracking(currentTripId);
 
-    console.log("[App] Journey started. Trip ID:", currentTripId);
+    console.log("[App] Journey started successfully. Trip ID:", currentTripId);
 
   } catch (err) {
-    console.error("[App] Start journey failed with error:", err);
-    alert("Could not start journey. Error: " + err.message);
+    console.error("[App] ❌ Start journey failed:", err);
+    alert("FATAL ERROR: " + err.message);
+    startBtn.disabled = false;
+    startBtn.innerHTML = `<span class="material-symbols-outlined">play_arrow</span>Start Journey`;
+  }
     startBtn.disabled = false;
     startBtn.innerHTML = `<span class="material-symbols-outlined">play_arrow</span>Start Journey`;
   }

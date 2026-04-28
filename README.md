@@ -6,6 +6,8 @@
 ![Tech Stack](https://img.shields.io/badge/Tech-JS%20|%20Firebase%20|%20Gemini-orange)
 ![Design](https://img.shields.io/badge/Design-Glassmorphism-purple)
 
+### 🌐 [Live Demo: safe-journey-ai-safety-tracker.vercel.app](https://safe-journey-ai-safety-tracker.vercel.app)
+
 ---
 
 ## 🌟 Key Features
@@ -96,7 +98,8 @@ The project follows a clean, organized modular architecture:
 
 2.  **AI Integration**:
     *   Obtain a Gemini API key from [Google AI Studio](https://aistudio.google.com/).
-    *   Update the `GEMINI_API_KEY` in `js/ai-layer.js`.
+    *   **Local**: Create a file `js/config.js` and add `export const GEMINI_API_KEY = "YOUR_KEY";`.
+    *   **Vercel**: Add `GEMINI_API_KEY` as an **Environment Variable** in the Vercel dashboard. The build script in `package.json` will handle the rest!
 
 ### Running Locally
 

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome — Safe Journey</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    :root {
+      --bg: #f8fafc;
+    }
+
+    body {
+      font-family: 'Manrope', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .header {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      color: var(--primary);
+      font-size: 2rem;
+    }
+
+    .logo-text {
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: #0f172a;
+    }
+
+    .welcome-container {
+      text-align: center;
+      max-width: 800px;
+      width: 90%;
+      animation: fadeIn 0.8s ease-out;
+      z-index: 10;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .welcome-title {
+      font-size: 3rem;
+      font-weight: 800;
+      color: #1e3a8a;
+      margin-bottom: 8px;
+    }
+
+    .welcome-subtitle {
+      font-size: 1.1rem;
+      color: var(--secondary);
+      margin-bottom: 48px;
+    }
+
+    .cards-row {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .role-card {
+      background: var(--card-bg);
+      border: 1px solid var(--outline);
+      border-radius: 32px;
+      padding: 64px 48px;
+      width: 280px;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .role-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(135deg, rgba(30,58,138,0.05) 0%, transparent 100%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .role-card:hover {
+      border-color: #be123c;
+      transform: translateY(-12px);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .role-card:hover::after { opacity: 1; }
+
+    .role-icon-box {
+      font-size: 3rem;
+      color: #be123c;
+    }
+
+    .role-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    /* Modal Styling */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 24px;
+      padding: 32px;
+      width: 100%;
+      max-width: 450px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      transform: scale(0.9);
+      transition: transform 0.3s;
+    }
+
+    .modal-overlay.active .modal {
+      transform: scale(1);
+    }
+
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .modal-desc {
+      color: var(--secondary);
+      font-size: 0.95rem;
+      margin-bottom: 24px;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid var(--outline);
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 1rem;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+
+    .modal-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 2px solid var(--outline);
+      color: var(--secondary);
+    }
+
+    .btn-outline:hover {
+      background: #f1f5f9;
+    }
+
+    .error-msg {
+      color: #be123c;
+      font-size: 0.85rem;
+      margin-top: 8px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <aside class="sidebar" id="mainSidebar">
+    <div class="sidebar-top">
+      <span class="material-symbols-outlined nav-logo-icon">shield_person</span>
+      <span class="nav-logo-text">Safe Journey</span>
+    </div>
+    
+    <div class="sidebar-menu">
+      <button class="sidebar-btn" onclick="window.location.href='../traveller/#history'">
+        <span class="material-symbols-outlined">history</span>Journey History
+      </button>
+      <button class="sidebar-btn" onclick="window.location.href='../traveller/#contacts'">
+        <span class="material-symbols-outlined">group</span>Trusted Circle
+      </button>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="profile-section">
+        <div class="profile-avatar" id="sideUserAvatar">?</div>
+        <div class="profile-info">
+          <div class="profile-name" id="sideUserName">Loading...</div>
+          <button class="profile-sub" id="logoutBtnSide">Logout</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <nav class="topnav" style="position: absolute; top: 0; left: 0; right: 0; background: transparent; border: none; box-shadow: none;">
+    <button class="menu-btn" id="menuToggle" style="margin: 1.5rem;">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
+  </nav>
+
+  <div class="welcome-container">
+    <div style="margin-bottom: 2rem;">
+      <span class="material-symbols-outlined" style="font-size: 4rem; color: #be123c;">shield_person</span>
+    </div>
+    <h1 class="welcome-title">Welcome</h1>
+    <p class="welcome-subtitle">Are you a traveller or a guardian?</p>
+
+    <div class="cards-row">
+      <div class="role-card" id="cardTraveller">
+        <div class="role-icon-box">
+          <span class="material-symbols-outlined" style="font-size: 4rem;">directions_run</span>
+        </div>
+        <div class="role-name">Traveller</div>
+      </div>
+
+      <div class="role-card" id="cardGuardian">
+        <div class="role-icon-box">
+          <span class="material-symbols-outlined" style="font-size: 4rem;">shield</span>
+        </div>
+        <div class="role-name">Guardian</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="guardianModal">
+    <div class="modal">
+      <h2 class="modal-title">Guardian Tracking</h2>
+      <p class="modal-desc">Enter the tracking link shared by the traveller to view their live journey.</p>
+      
+      <div class="input-group">
+        <label for="trackingLink">Tracking Link</label>
+        <input type="text" id="trackingLink" class="modal-input" placeholder="https://...">
+        <div class="error-msg" id="linkError">Please enter a valid tracking link.</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-outline" id="btnCancel">Cancel</button>
+        <button class="btn btn-primary" id="btnSubmitLink">Track Journey</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="../js/welcome.js"></script>
+</body>
+</html>

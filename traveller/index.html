@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<!--
+  FILE: index.html — Safe Journey Traveller Dashboard
+  TABS: Dashboard | History | Contacts | Safety Intel
+  JS modules loaded: app.js (imports tracking, map, ai-layer, digipin, firebase-config)
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Safe Journey — Traveller</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TOP NAV BAR
+════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════
+     SIDEBAR DRAWER
+════════════════════════════════════════════════════════════ -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="mainSidebar">
+  <div class="sidebar-top">
+    <span class="material-symbols-outlined nav-logo-icon">shield_person</span>
+    <span class="nav-logo-text">Safe Journey</span>
+  </div>
+  
+  <div class="sidebar-menu">
+    <button class="sidebar-btn" data-tab="history" id="btnSideHistory">
+      <span class="material-symbols-outlined">history</span>Journey History
+    </button>
+    <button class="sidebar-btn" data-tab="contacts" id="btnSideContacts">
+      <span class="material-symbols-outlined">group</span>Trusted Circle
+    </button>
+  </div>
+
+  <div class="sidebar-bottom">
+    <div class="profile-section">
+      <div class="profile-avatar" id="sideUserAvatar">?</div>
+      <div class="profile-info">
+        <div class="profile-name" id="sideUserName">Loading...</div>
+        <button class="profile-sub" id="logoutBtnSide">Logout</button>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<main class="main-content">
+  <!-- Top Bar inside main content -->
+  <nav class="topnav">
+    <button class="menu-btn" id="menuToggle">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
+    
+    <div class="topnav-left">
+      <span class="nav-logo-text">Safe Journey</span>
+    </div>
+
+    <div style="flex:1"></div>
+
+    <div class="status-pill" id="navStatusPill">
+      <span class="status-dot" id="navDot"></span>
+      <span id="navStatusLabel">Ready</span>
+    </div>
+
+    <button class="home-btn" id="goHomeBtn" title="Back to Welcome">
+      <span class="material-symbols-outlined">home</span>
+    </button>
+  </nav>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TAB: DASHBOARD
+════════════════════════════════════════════════════════════ -->
+<div class="tab-content active" id="tab-dashboard">
+  <div class="dashboard-grid">
+    <!-- ── LEFT COLUMN: Setup & Status ── -->
+    <div class="col-left">
+      <!-- Journey Setup Card -->
+      <div class="card">
+        <div class="card-header">
+          <span class="material-symbols-outlined">edit_location_alt</span>
+          Journey Setup
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="userName">Full Name</label>
+            <input type="text" id="userName" placeholder="Priya Sharma"/>
+          </div>
+          <div class="form-group">
+            <label for="userPhone">Phone Number</label>
+            <input type="tel" id="userPhone" placeholder="+91 98765 43210"/>
+          </div>
+          <div class="form-group full-width">
+            <label for="source">Starting Point</label>
+            <input type="text" id="source" placeholder="e.g. Andheri Office"/>
+          </div>
+          <div class="form-group full-width">
+            <label for="destination">Destination</label>
+            <input type="text" id="destination" placeholder="e.g. Home, Borivali"/>
+          </div>
+          <div class="form-group full-width">
+            <label for="expectedArrival">Expected Arrival Time</label>
+            <input type="time" id="expectedArrival"/>
+          </div>
+        </div>
+        
+        <div class="btn-row" style="margin-top: 1.5rem;">
+          <button class="btn btn-primary" id="startJourneyBtn">
+            <span class="material-symbols-outlined">play_arrow</span>Start Journey
+          </button>
+          <button class="btn btn-danger" id="endJourneyBtn" style="display:none;">
+            <span class="material-symbols-outlined">stop</span>End Journey
+          </button>
+        </div>
+
+        <div id="shareSection" style="display:none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--outline);">
+          <div class="stat-label" style="margin-bottom:0.5rem;">📤 Live Tracking Link</div>
+          <div class="share-row" style="display:flex; gap:0.5rem;">
+            <input type="text" id="shareUrl" readonly class="form-input" style="flex:1; font-family:monospace; font-size:0.8rem; background:#f8fafc; padding:10px; border:1px solid var(--outline); border-radius:8px;"/>
+            <button class="btn btn-primary btn-sm" onclick="copyLink()">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Tracking Status -->
+      <div class="card" style="flex: 1; display: flex; flex-direction: column;">
+        <div class="card-header">
+          <span class="material-symbols-outlined">my_location</span>
+          Live Tracking Status
+        </div>
+        <div class="status-grid">
+          <div class="stat-box">
+            <div class="stat-label">Journey Status</div>
+            <div class="stat-value" id="statusDisplay">Ready</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Alert Level</div>
+            <div class="stat-value" id="alertLevelDisplay">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Latitude</div>
+            <div class="stat-value mono" id="currentCoords">—</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Longitude</div>
+            <div class="stat-value mono" id="currentLng">—</div>
+          </div>
+        </div>
+        <div class="digipin-bar" id="digipinBar" style="background:var(--primary-lt); padding:1rem; border-radius:12px; display:flex; align-items:center; gap:1rem; margin-top: 1rem;">
+          <div class="digipin-icon" style="width:40px; height:40px; background:white; border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--primary); box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+            <span class="material-symbols-outlined">qr_code_2</span>
+          </div>
+          <div style="flex:1">
+            <div class="stat-label" style="margin-bottom:0;">DigiPin Code</div>
+            <div class="stat-value mono" id="digiPinDisplay" style="font-size:1.25rem; letter-spacing:2px; color:var(--primary);">—</div>
+          </div>
+        </div>
+        <div class="last-updated" id="lastUpdatedDisplay" style="margin-top: 0.75rem; text-align: right; font-size: 11px; color: var(--secondary);">Not yet tracking</div>
+      </div>
+    </div>
+
+    <!-- ── RIGHT COLUMN: Map & AI ── -->
+    <div class="col-right">
+      <!-- Live Map Card -->
+      <div class="card card-map" style="flex: 1; display: flex; flex-direction: column;">
+        <div class="card-header">
+          <span class="material-symbols-outlined">map</span>
+          Live Tracking Map
+          <span class="map-status" id="mapStatus">GPS Active</span>
+        </div>
+        <div id="map" style="flex: 1; min-height: 420px; border-radius: 16px; border: 1px solid var(--outline);"></div>
+        
+        <!-- Emergency Action Bar -->
+        <div class="sos-wrapper" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--outline);">
+          <div class="sos-actions-row" id="activeJourneyActions" style="display:none; gap:1.5rem; margin-bottom:1.5rem; justify-content: center;">
+            <button class="action-circle-btn" id="activeCallBtn" title="Call Primary Contact">
+              <span class="material-symbols-outlined">call</span>
+            </button>
+            <button class="sos-btn" id="sosBtn">
+              <span class="material-symbols-outlined">emergency</span>
+              SOS
+            </button>
+            <button class="action-circle-btn" id="activeChatBtn" title="Chat with Trusted Circle">
+              <span class="material-symbols-outlined">chat</span>
+            </button>
+          </div>
+          
+          <!-- Static SOS for when not in journey (optional, or just show when journey starts) -->
+          <div id="staticSos" style="display: flex; flex-direction: column; align-items: center;">
+             <button class="sos-btn" onclick="triggerSOS()">
+              <span class="material-symbols-outlined">emergency</span>
+              SOS
+            </button>
+            <div style="font-size:10px; color:var(--secondary); text-align:center; margin-top:8px;">Hold for emergency</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Safety Intelligence -->
+      <div class="card card-ai">
+        <div class="card-header">
+          <span class="material-symbols-outlined">auto_awesome</span>
+          AI Safety Intelligence
+          <span class="mock-tag" style="margin-left:auto;">Gemini AI</span>
+        </div>
+        <div class="ai-summary-text" id="aiSummaryText" style="min-height: 100px; font-size: 0.95rem; line-height: 1.6; color: #334155;">
+          Start a journey to see an AI-generated safety summary.
+        </div>
+        <div class="summary-meta" style="display:flex; justify-content:space-between; align-items:center; margin-top:0.75rem; color:var(--secondary); font-size:0.85rem;">
+          <span id="summaryUpdatedAt">Not updated yet</span>
+          <span style="font-weight:600;">Summary status</span>
+        </div>
+        <div class="btn-row" style="margin-top: 1rem;">
+          <button class="btn btn-outline btn-sm" id="refreshSummaryBtn" style="width: auto;">
+            <span class="material-symbols-outlined">refresh</span>Refresh Analysis
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="material-symbols-outlined">history</span>
+          Journey Timeline
+        </div>
+        <div class="timeline" id="eventTimeline" style="min-height: 140px; padding: 1rem; background: rgba(15,23,42,0.02); border-radius: 16px;">
+          <div class="timeline-empty" style="color: var(--secondary); text-align: center; padding: 2rem;">No events yet. Start a journey to populate the timeline.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="material-symbols-outlined">warning</span>
+          Anomaly Status
+        </div>
+        <div style="display:flex; align-items:center; gap:1rem; padding: 1rem 0;">
+          <div id="anomalyIcon" style="font-size: 1.8rem;">🟢</div>
+          <div>
+            <div id="anomalyMessage" style="font-size: 0.95rem; color: #334155;">Waiting for first GPS update.</div>
+            <div style="margin-top: 0.4rem; font-size: 0.85rem; color: var(--secondary);">Alert level: <span id="anomalyLevel">0</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     TAB: JOURNEY HISTORY
+     Uses mock data. Replace loadHistory() in app.js
+     with Firebase read from /journeyHistory when ready.
+════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-history">
+  <div class="section-header">
+    <h2 class="section-title">Journey History</h2>
+    <p class="section-sub">Your past journeys and their safety records</p>
+  </div>
+
+  <!-- Filter buttons -->
+  <!-- History cards are injected here by app.js → renderHistory() -->
+  <div class="history-grid" id="historyGrid"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     TAB: TRUSTED CONTACTS
+     Mock data shown. Save selected contacts to Firebase under
+     trips/{tripId}/sharedWith when sharing a live journey.
+════════════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-contacts">
+  <div class="section-header">
+    <h2 class="section-title">Trusted Circle</h2>
+    <p class="section-sub">People who will be notified in case of an emergency</p>
+  </div>
+
+  <!-- Add Contact Form -->
+  <div class="add-contact-card">
+    <div class="add-contact-title">
+      <span class="material-symbols-outlined">person_add</span>
+      Add New Contact
+    </div>
+    <div class="contact-form-grid">
+      <div class="form-group">
+        <label for="newContactName">Name</label>
+        <input type="text" id="newContactName" placeholder="e.g. Papa"/>
+      </div>
+      <div class="form-group">
+        <label for="newContactRelation">Relationship</label>
+        <input type="text" id="newContactRelation" placeholder="e.g. Family"/>
+      </div>
+      <div class="form-group">
+        <label for="newContactPhone">Phone Number</label>
+        <input type="tel" id="newContactPhone" placeholder="e.g. +91..."/>
+      </div>
+      <button class="btn btn-primary" id="addContactSubmitBtn">
+        <span class="material-symbols-outlined">add</span>
+        Add
+      </button>
+    </div>
+  </div>
+
+  <div class="share-journey-bar" id="shareJourneyBar">
+    <div>
+      <div style="font-weight:800; font-size:0.95rem;">Notify Selected Contacts</div>
+      <div id="shareJourneyStatus" style="font-size:0.8rem; color:var(--secondary); margin-top:2px;">Select contacts below to share your live journey</div>
+    </div>
+    <button class="btn btn-primary btn-sm" id="shareWithSelectedBtn" disabled>
+      <span class="material-symbols-outlined">share</span>Share Link
+    </button>
+  </div>
+
+  <div class="contacts-grid" id="contactsGrid"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     TAB: SAFETY INTELLIGENCE
+     Rule-based anomaly detection. Connect to tracking.js
+     anomaly output. Replace rules with ML later if needed.
+════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════
+     CHAT MODAL
+════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="chatModalOverlay">
+  <div class="modal chat-modal">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="contact-avatar" id="chatContactAvatar">?</div>
+        <div>
+          <div style="font-weight:800;" id="chatContactName">Chat</div>
+          <div style="font-size:0.75rem; color:var(--secondary);">Trusted Circle</div>
+        </div>
+      </div>
+      <button class="btn-close" id="closeChatBtn">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    
+    <div class="chat-messages" id="chatMessages">
+      <!-- Messages injected here -->
+    </div>
+
+    <div class="chat-input-area">
+      <button class="btn btn-outline btn-sm" id="sendLinkInChatBtn" title="Share Journey Link" style="width:48px; height:48px; border-radius:12px; padding:0; display:none;">
+        <span class="material-symbols-outlined">share_location</span>
+      </button>
+      <input type="text" id="chatInput" placeholder="Type a message..."/>
+      <button class="btn btn-primary btn-sm" id="sendChatBtn">
+        <span class="material-symbols-outlined">send</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Contact Selection Modal -->
+<div class="modal-overlay" id="contactSelectModalOverlay">
+  <div class="modal" style="max-width: 400px;">
+    <div class="modal-header">
+      <div style="font-weight:800;">Select Contact to Chat</div>
+      <button class="btn-close" id="closeContactSelectBtn">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div id="contactSelectList" style="padding: 1.5rem; max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
+      <!-- Contact items injected here by app.js -->
+    </div>
+  </div>
+</div>
+</main>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCRIPTS — ORDER MATTERS
+     1. Leaflet JS (must come before app.js uses L.map)
+     2. app.js  (type=module — imports all other JS files)
+════════════════════════════════════════════════════════════ -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module" src="../js/app.js"></script>
+
+<script>
+  // ── Sidebar Toggle ──────────
+  const menuBtn = document.getElementById("menuToggle");
+  const sidebar = document.getElementById("mainSidebar");
+  const overlay = document.getElementById("sidebarOverlay");
+  
+  function toggleSidebar() {
+    sidebar.classList.toggle("open");
+    overlay.classList.toggle("active");
+  }
+  
+  if (menuBtn) menuBtn.addEventListener("click", toggleSidebar);
+  if (overlay) overlay.addEventListener("click", toggleSidebar);
+
+  // ── Home Button ──────────
+  document.getElementById("goHomeBtn").addEventListener("click", () => {
+    window.location.href = "../welcome/";
+  });
+
+  // ── Tab switching ──────────
+  document.querySelectorAll(".sidebar-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".sidebar-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+      
+      // Close sidebar on mobile after clicking
+      if (window.innerWidth < 1024) toggleSidebar();
+    });
+  });
+
+  // ── History filter buttons ──────────────────────────────
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      // filterHistory is defined in app.js and exposed on window
+      if (window.filterHistory) window.filterHistory(btn.dataset.filter);
+    });
+  });
+
+  // ── Copy guardian link ──────────────────────────────────
+  function copyLink() {
+    const input = document.getElementById("shareUrl");
+    if (!input?.value) { alert("Start a journey first!"); return; }
+    navigator.clipboard.writeText(input.value)
+      .then(() => alert("Guardian link copied!"))
+      .catch(() => { input.select(); document.execCommand("copy"); });
+  }
+</script>
+</body>
+</html>

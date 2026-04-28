@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<!--
+  FILE: guardian.html — Safe Journey Guardian Dashboard
+  URL format: guardian.html?trip=TRIP_ID
+  JS: guardian.js (type=module) imports firebase-config, ai-layer, digipin
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Safe Journey — Guardian View</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TOP NAV
+════════════════════════════════════════════════════════════ -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="mainSidebar">
+  <div class="sidebar-top">
+    <span class="material-symbols-outlined nav-logo-icon">shield_person</span>
+    <span class="nav-logo-text">Safe Journey</span>
+  </div>
+  
+  <div class="sidebar-menu">
+    <button class="sidebar-btn" onclick="window.location.href='../traveller/#history'">
+      <span class="material-symbols-outlined">history</span>Journey History
+    </button>
+    <button class="sidebar-btn" onclick="window.location.href='../traveller/#contacts'">
+      <span class="material-symbols-outlined">group</span>Trusted Circle
+    </button>
+  </div>
+
+  <div class="sidebar-bottom">
+    <div class="profile-section">
+      <div class="profile-avatar" id="sideUserAvatar">?</div>
+      <div class="profile-info">
+        <div class="profile-name" id="sideUserName">Loading...</div>
+        <button class="profile-sub" id="logoutBtnSide">Logout</button>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<nav class="topnav">
+  <div class="topnav-left" style="display:flex; align-items:center;">
+    <button class="menu-btn" id="menuToggle" style="margin-right:12px;">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
+    <span class="nav-logo-text">Safe Journey</span>
+  </div>
+  <div class="topnav-right" style="display:flex; align-items:center; gap:16px;">
+    <div class="live-indicator">
+      <span class="status-dot" style="background:#3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);"></span>
+      <span style="font-size:11px; font-weight:800; color:var(--primary); letter-spacing:0.05em;">LIVE</span>
+    </div>
+    <button class="home-btn" onclick="window.location.href='../welcome/'" title="Back to Home">
+      <span class="material-symbols-outlined">home</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SOS ALERT BANNER (hidden until SOS triggered)
+     Shown by guardian.js when status === "sos"
+════════════════════════════════════════════════════════════ -->
+<div class="sos-banner" id="sosBanner" style="display:none;">
+  <span class="material-symbols-outlined" style="font-size:1.5rem;">emergency</span>
+  <div>
+    <strong>SOS ALERT TRIGGERED</strong>
+    <div style="font-size:0.85rem; margin-top:2px;">Traveller may need immediate assistance. Contact now.</div>
+  </div>
+  <button class="btn btn-sm" style="background:white; color:#BE123C; font-weight:800;" onclick="callTraveller()">
+    <span class="material-symbols-outlined" style="font-size:1rem;">call</span>Call Now
+  </button>
+  <button class="btn btn-sm" style="background:white; color:#BE123C; font-weight:800; margin-left:8px;" onclick="openGuardianChat()">
+    <span class="material-symbols-outlined" style="font-size:1rem;">chat</span>Chat Now
+  </button>
+</div>
+
+<!-- High-Fidelity Chat Modal -->
+<div class="modal-overlay" id="chatModalOverlay">
+  <div class="modal chat-modal">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="contact-avatar" id="chatContactAvatar">?</div>
+        <div>
+          <div style="font-weight:800;" id="chatContactName">Chat</div>
+          <div style="font-size:0.75rem; color:var(--secondary);">Direct Support</div>
+        </div>
+      </div>
+      <button class="btn-close" id="closeChatBtn">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-area">
+      <input type="text" id="chatInput" placeholder="Type a message..."/>
+      <button class="btn btn-primary btn-sm" id="sendChatBtn">
+        <span class="material-symbols-outlined">send</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="guardianContent" class="main-container">
+<div class="dashboard-grid">
+
+  <!-- ── LEFT COLUMN: Data & Intel ── -->
+  <div class="col-left">
+
+    <!-- Traveller Info Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="material-symbols-outlined">person_pin</span>
+        Traveller Details
+      </div>
+      <div class="traveller-profile" style="display:flex; align-items:center; gap:12px; margin-bottom:1.25rem;">
+        <div class="traveller-avatar" id="travelerInitial" style="width:48px; height:48px; background:var(--primary); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.2rem;">?</div>
+        <div>
+          <div class="traveller-name" id="travelerName" style="font-weight:800; font-size:1.1rem;">Loading…</div>
+          <div class="traveller-route" id="routeDisplay" style="font-size:0.85rem; color:var(--secondary);">— → —</div>
+        </div>
+      </div>
+      <div class="status-grid">
+        <div class="stat-box">
+          <div class="stat-label">Phone Number</div>
+          <div class="stat-value" id="travelerPhone">—</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Alert Level</div>
+          <div class="stat-value" id="alertLevelG">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Last Update</div>
+          <div class="stat-value" id="lastUpdated">—</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Expected Arrival</div>
+          <div class="stat-value" id="etaDisplay">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Stats Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="material-symbols-outlined">location_on</span>
+        Live Location Status
+      </div>
+      <div class="status-grid" style="grid-template-columns: 1.5fr 1fr;">
+        <div class="stat-box">
+          <div class="stat-label">GPS Coordinates</div>
+          <div class="stat-value mono" id="coordsDisplay" style="font-family:monospace; font-size:0.85rem;">Waiting for GPS…</div>
+        </div>
+        <div class="stat-box" style="background:var(--primary); color:white;">
+          <div class="stat-label" style="color:rgba(255,255,255,0.7);">DIGIPIN</div>
+          <div class="stat-value" id="digipinDisplay" style="font-size:1.2rem; font-weight:900;">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Safety Intelligence Card -->
+    <div class="card card-ai">
+      <div class="card-header">
+        <span class="material-symbols-outlined">health_and_safety</span>
+        Safety Intelligence
+      </div>
+      <div class="alert-banner idle" id="alertSummary" style="margin-bottom: 1rem;">Waiting for journey data…</div>
+      
+      <div class="stat-label" style="margin-bottom:0.5rem;">AI Risk Assessment</div>
+      <div class="ai-summary-text" id="aiSummaryG" style="background:white; border:1px solid var(--outline); padding:1rem; border-radius:0.75rem; font-size:0.9rem; line-height:1.6;">Waiting for AI analysis…</div>
+    </div>
+
+    <!-- Timeline Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="material-symbols-outlined">timeline</span>
+        Journey Safety Timeline
+      </div>
+      <div class="timeline" id="guardianTimeline" style="margin-top:1rem;">
+        <div class="timeline-empty" style="text-align:center; color:var(--secondary); padding:2rem;">Waiting for journey updates…</div>
+      </div>
+    </div>
+
+  </div><!-- end col-left -->
+
+  <!-- ── RIGHT COLUMN: Map & Actions ── -->
+  <div class="col-right">
+
+    <!-- Live Map Card -->
+    <div class="card card-map" style="padding:0; overflow:hidden;">
+      <div class="card-header" style="padding:1.25rem 1.5rem;">
+        <span class="material-symbols-outlined">map</span>
+        Live Tracking Map
+        <span class="map-status" id="mapStatusG" style="margin-left:auto; font-size:0.7rem; background:rgba(0,0,0,0.05); padding:4px 8px; border-radius:4px;">Initialising…</span>
+      </div>
+      <div id="map" style="height:500px;"></div>
+    </div>
+
+    <!-- Emergency Actions -->
+    <div class="card">
+      <div class="card-header">
+        <span class="material-symbols-outlined">emergency</span>
+        Emergency Actions
+      </div>
+      <div class="btn-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem;">
+        <button class="btn btn-primary" onclick="callTraveller()">
+          <span class="material-symbols-outlined">call</span>Call Traveller
+        </button>
+        <button class="btn btn-outline" onclick="openGuardianChat()">
+          <span class="material-symbols-outlined">chat</span>Send Message
+        </button>
+        <button class="btn btn-danger" style="grid-column: span 2;" onclick="callEmergency()">
+          <span class="material-symbols-outlined">emergency_share</span>Emergency (112)
+        </button>
+        <button class="btn btn-outline" style="grid-column: span 2;" onclick="shareThisPage()">
+          <span class="material-symbols-outlined">share</span>Share Tracking View
+        </button>
+      </div>
+    </div>
+
+  </div><!-- end col-right -->
+</div><!-- end dashboard-grid -->
+
+</div><!-- end guardianContent -->
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module" src="../js/guardian.js"></script>
+
+<script>
+  function callTraveller() {
+    const phone = window.currentTravelerPhone;
+    if (phone) window.location.href = `tel:${phone}`;
+    else alert("Phone number not available for this traveller.");
+  }
+  function messageTraveller() {
+    const phone = window.currentTravelerPhone;
+    if (phone) window.location.href = `sms:${phone}`;
+    else alert("Phone number not available for this traveller.");
+  }
+  function callEmergency() {
+    if (confirm("Call 112 (Emergency Services)?")) window.location.href = "tel:112";
+  }
+  function shareThisPage() {
+    const url = window.location.href;
+    if (navigator.share) navigator.share({ title: "Safe Journey — Live Tracking", url });
+    else navigator.clipboard.writeText(url).then(() => alert("Link copied!"));
+  }
+</script>
+</body>
+</html>

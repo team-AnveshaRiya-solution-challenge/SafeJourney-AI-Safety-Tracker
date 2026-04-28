@@ -1,0 +1,7 @@
+{
+  "name": "safe-journey-ai",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "mkdir -p js && echo \"export const GEMINI_API_KEY = '$GEMINI_API_KEY';\" > js/config.js"
+  }
+}

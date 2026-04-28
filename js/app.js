@@ -110,6 +110,7 @@ async function handleLogout() {
 }
 
 async function startJourney() {
+  console.log("[App] Start Journey button clicked");
   const userName = document.getElementById("userName").value.trim();
   const userPhone = document.getElementById("userPhone").value.trim();
   const source = document.getElementById("source").value.trim();
@@ -191,8 +192,8 @@ async function startJourney() {
     console.log("[App] Journey started. Trip ID:", currentTripId);
 
   } catch (err) {
-    console.error("[App] Start journey failed:", err);
-    alert("Could not start journey. Check Firebase rules and internet connection.");
+    console.error("[App] Start journey failed with error:", err);
+    alert("Could not start journey. Error: " + err.message);
     startBtn.disabled = false;
     startBtn.innerHTML = `<span class="material-symbols-outlined">play_arrow</span>Start Journey`;
   }

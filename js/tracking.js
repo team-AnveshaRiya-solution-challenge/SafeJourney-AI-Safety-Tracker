@@ -13,6 +13,7 @@ let prevLng = null;
 let aiCallTimer = null;
 
 export function startLiveTracking(tripId) {
+  console.log("[Tracking] Initializing live tracking for trip:", tripId);
   if (!navigator.geolocation) {
     alert("This browser does not support GPS. Tracking won't work.");
     return;

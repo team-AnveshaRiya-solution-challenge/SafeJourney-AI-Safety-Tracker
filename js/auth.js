@@ -114,8 +114,4 @@ function formatError(code) {
   }
 }
 
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    window.location.href = "../welcome/";
-  }
-});
+

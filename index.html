@@ -1,10 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="refresh" content="0; url=welcome/">
-    <script>window.location.href = "welcome/"</script>
+    <title>Safe Journey — Redirecting...</title>
+    <style>
+        body { background: #0f172a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; margin: 0; }
+        .loader { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin-right: 12px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
-    <p>Redirecting to <a href="welcome/">Safe Journey Welcome</a>...</p>
+    <div class="loader"></div>
+    <p>Securing your session...</p>
+
+    <script type="module">
+        import { auth } from './js/firebase-config.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                window.location.href = "welcome/";
+            } else {
+                window.location.href = "auth/";
+            }
+        });
+    </script>
 </body>
 </html>

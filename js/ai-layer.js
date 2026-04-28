@@ -1,6 +1,17 @@
-import { GEMINI_API_KEY } from './config.js';
+let GEMINI_API_KEY = "";
 
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+// Expert Fix: Use dynamic import so the app doesn't crash if config.js is missing on Vercel
+async function loadConfig() {
+  try {
+    const config = await import('./config.js');
+    GEMINI_API_KEY = config.GEMINI_API_KEY;
+  } catch (e) {
+    console.warn("[AI] Config file not found, using local fallback mode.");
+  }
+}
+loadConfig();
+
+const GEMINI_URL_BASE = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent`;
 
 
 /**
@@ -117,7 +128,7 @@ Rules:
 `.trim();
 
     // ── Call the Gemini API ───────────────────────────────
-    const response = await fetch(GEMINI_URL, {
+    const response = await fetch(`${GEMINI_URL_BASE}?key=${GEMINI_API_KEY}`, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
